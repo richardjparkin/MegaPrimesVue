@@ -45,7 +45,7 @@
                 }
 
                 const start = performance.now()
-                this.megaPrimes = MegaPrimesCalc.SieveEratosthenes(this.number)
+                this.megaPrimes = MegaPrimesCalc.Fast(this.number)
                 const end = performance.now()
                 const seconds = (end - start) / 1000 
 

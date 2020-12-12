@@ -5,11 +5,13 @@ function IsPrime(number) {
 
     if (number <= 1) {
         return false;
+    } else if (number % 2 == 0) {
+        return number == 2;
     }
 
     var root = Math.sqrt(number)
 
-    for (var i = 2; i <= root; i++) {
+    for (var i = 3; i <= root; i+=2) {
         if (number % i == 0) {
             return false;
         }
@@ -18,121 +20,54 @@ function IsPrime(number) {
     return true;
 }
 
-function AreAllDigitsPrime(number) {
-    // Function to determine whether or not ALL digits of a number are prime
+exports.Fast = function (max) {
+    // Function that retrieves all the megaprime numbers up to <max> by quickly identifying the numbers whos digits are all prime
+    // If ANY digits of a number are NOT prime then instead of increasing the number by 1, increase the first digit that wasn't prime by 1
 
-    while (number > 0) {
-        var digit = number % 10;
-        number = Math.floor(number / 10);
+    // e.g.
 
-        if (digit != 2 && digit != 3 && digit != 5 && digit != 7) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function SieveEratosthenesBasic(max) {
-    // Function that retrieves all the prime numbers up to <max> using the sieve of Eratosthenes algorithm (https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
-    // Cannot be used as a solution on it own because of the memory requirements when <max> is very large
-    // Is used to implement the segmented version of the sieve of Eratosthenes algorithm
-
-    var primes = []
-    var primesTmp = [max + 1]
-
-    for (var i = 0; i <= max; i++) {
-        primesTmp[i] = true;
-    }
-
-    for (i = 2; i <= max; i++) {
-        if (primesTmp[i]) {
-            primes.push(i);
-
-            for (var j = i + i; j <= max; j += i) {
-                primesTmp[j] = false;
-            }
-        }
-    }
-
-    return primes;
-}  
-
-exports.SieveEratosthenes = function (max) {
-    // Function that retrieves all the megaprime numbers up to <max> using the segmented version of the sieve of Eratosthenes algorithm (https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes)
-    // It has to be the segmented rather than the simple version because of the memory requirements when <max> is very large
+    // If the current number is 422222222 then there is no point checking 422222223 - 499999999 because they will all fail because of the 4
+    // Therefore we can safely increase the last digit by one to 522222222
 
     var megaPrimes = [];
 
-    // Start by generating all the prime numbers up to the sqrt<max>
+    var i = 2;
 
-    var maxSegSize = Math.floor(Math.sqrt(max));
+    while (i <= max) {
+        var number = i;
+        var digit = 0;
+        var index = 0;
 
-    var primes = SieveEratosthenesBasic(maxSegSize);
+        // Iterate through digits, least significant first
 
-    for (var i = 0; i < primes.length; i++) {
-        var prime = primes[i];
-        if (AreAllDigitsPrime(prime)) {
-            megaPrimes.push(prime);
-        }
-    }
+        while (number != 0) {
+            digit = number % 10;
 
-    // Then break the rest of the number sequence from sqrt<max> to <max> into segments of size sqrt<max>
-    // Calculating the megaprimes in each segment
-
-    var segStart = maxSegSize + 1;
-
-    while (segStart <= max) {
-        var segEnd = segStart + maxSegSize - 1;
-        if (segEnd > max)
-            segEnd = max;
-
-        var segSize = segEnd - segStart + 1;
-        var segPrimes = [segSize];
-
-        for (i = 0; i < segSize; i++) {
-            segPrimes[i] = true;
-        }
-
-        for (i = 0; i <= primes.length; i++) {
-            prime = primes[i];
-            var checkStart = Math.floor(segStart / prime) * prime;
-            if (segStart % prime != 0) {
-                checkStart += prime;
+            if (digit != 2 && digit != 3 && digit != 5 && digit != 7) {
+                break;
             }
 
-            for (var j = checkStart; j <= segEnd; j += prime) {
-                segPrimes[j - segStart] = false;
-            }
+            number = Math.floor(number / 10);
+            index++;
         }
 
-        for (j = 0; j < segSize; j++) {
-            var number = j + segStart;
+        if (number == 0) {
+            // All digits ARE primes so check if the number is prime too
 
-            if (segPrimes[j] && AreAllDigitsPrime(number)) {
-                megaPrimes.push(number);
+            if (IsPrime(i)) {
+                megaPrimes.push(i);
             }
+
+            // Check next number
+
+            i++;
         }
+        else {
+            // All digits are NOT primes, increase the first digit that failed by 1
 
-        segStart += maxSegSize;
-    }
-
-    return megaPrimes;
-}
-
-exports.TrialDivison = function (max) {
-    // Function to determine all the megaprime numbers up to <max> using the simple trial by division method
-
-    var megaPrimes = [];
-
-    for (var i = 2; i <= max && i != 0; i++) {
-        if (AreAllDigitsPrime(i) && IsPrime(i)) {
-            megaPrimes.push(i);
+            i += Math.pow(10, index);
         }
     }
 
     return megaPrimes;
 }
-
-
-
